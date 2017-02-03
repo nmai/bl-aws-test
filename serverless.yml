@@ -1,0 +1,13 @@
+service: bl-aws-test
+
+provider:
+  name: aws
+  runtime: nodejs4.3
+
+functions:
+  getComment: # Function name
+    handler: handler.getComment # Reference to file handler.js & exported function 'createUser'
+    events: # All events associated with this function
+      - http:
+          path: comments/{id}
+          method: get
