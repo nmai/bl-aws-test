@@ -1,39 +1,38 @@
 'use strict'
 
-const request = require('request-promise')
-const Promise = require('bluebird')
-const uuidV4  = require('uuid/v4')
-const co      = Promise.coroutine
-const fs      = Promise.promisifyAll(require('fs'))
+const request   = require('request-promise')
+const Promise   = require('bluebird')
+const uuidV4    = require('uuid/v4')
+const s3client  = require('./s3client')
+const co        = Promise.coroutine
+const fs        = Promise.promisifyAll(require('fs'))
 
 module.exports = {
 
   /**
    * Fetches JSON data from an external API, stores it, and sends it to
-   * the client.
+   * the client. AWS Event Handler - not invoked explicitly.
    */
   getComment: co(function*(event, context, callback) {
 
     let id = event.pathParameters['id']
 
     try {
+      const fileProperties = generateFileName()
 
-      let data = yield request(`https://jsonplaceholder.typicode.com/comments/${id}`)
+      let data      = yield request(`https://jsonplaceholder.typicode.com/comments/${id}`)
+      let writeData = yield saveAsync(data, fileProperties.filePath)
+      let uploadRes = yield s3client.uploadFileFromPath(fileProperties.filePath, fileProperties.fileName)
 
-      yield saveAsync(data)
+      console.log('Saved and uploaded file successfully')
 
-      console.log('Saved file successfully')
-
-      let response = {
+      let clientResponse = {
         statusCode: 200,
-        body: JSON.stringify({
-          message: data,
-          input: event
-        }),
+        body: data
       }
 
       context.callbackWaitsForEmptyEventLoop = false
-      callback(null, response)
+      callback(null, clientResponse)
 
     } catch(err) {
       callback(err)
@@ -42,19 +41,31 @@ module.exports = {
 }
 
 /**
- * Generates a UUID-based filename and saves the given data to a file
+ * Saves the given data to the filesystem
  * @param  {Object | string} data - either an object or a string
- * @return {Promise<void>}
+ * @param  {string} path - the full file path to save to
+ * @return {Promise<any>}
  */
-function saveAsync(data) {
-  let filename = uuidV4() + '.json'
-  let stringData = typeof data === 'string'
-                    ? data
-                    : JSON.stringify(data)
+function saveAsync(data, path) {
+  let stringData = typeof data === 'string' ? data : JSON.stringify(data)
 
-  console.log('Saving ' + filename)
+  console.log('Saving to ' + path)
 
   let write = Promise.promisify(fs.writeFile)
 
-  return write('/tmp/' + filename, stringData)
+  return write(path, stringData)
+}
+
+/**
+ * Generates a UUID-based filename and path within the write-available
+ * tmp directory of a Lambda instance.
+ * @return {Object} fileName: string, filePath: string
+ */
+function generateFileName() {
+  let name = uuidV4() + '.json'
+
+  return {
+    fileName: name,
+    filePath: '/tmp/' + name
+  }
 }
