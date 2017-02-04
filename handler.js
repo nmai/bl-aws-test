@@ -20,9 +20,9 @@ module.exports = {
     try {
       const fileProperties = generateFileName()
 
-      let data      = yield request(`https://jsonplaceholder.typicode.com/comments/${id}`)
-      let writeData = yield saveAsync(data, fileProperties.filePath)
-      let uploadRes = yield s3client.uploadFileFromPath(fileProperties.filePath, fileProperties.fileName)
+      let data = yield request(`https://jsonplaceholder.typicode.com/comments/${id}`)
+      yield saveAsync(data, fileProperties.filePath)
+      yield s3client.uploadFileFromPath(fileProperties.filePath, fileProperties.fileName)
 
       console.log('Saved and uploaded file successfully')
 
@@ -33,7 +33,6 @@ module.exports = {
 
       context.callbackWaitsForEmptyEventLoop = false
       callback(null, clientResponse)
-
     } catch(err) {
       callback(err)
     }

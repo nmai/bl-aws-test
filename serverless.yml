@@ -3,6 +3,11 @@ service: bl-aws-test
 provider:
   name: aws
   runtime: nodejs4.3
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource: "arn:aws:s3:::bl-inbox-bucket/*"
 
 functions:
   getComment: # Function name
@@ -11,3 +16,22 @@ functions:
       - http:
           path: comments/{id}
           method: get
+
+resources:
+  Resources:
+    UploadBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: bl-inbox-bucket
+        AccessControl: PublicRead
+        CorsConfiguration:
+          CorsRules:
+          - AllowedMethods:
+            - GET
+            - PUT
+            - POST
+            - HEAD
+            AllowedOrigins:
+            - "*"
+            AllowedHeaders:
+            - "*"

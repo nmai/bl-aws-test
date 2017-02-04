@@ -20,9 +20,9 @@
     "serverless": "^1.6.1"
   },
   "dependencies": {
+    "aws-sdk": "^2.9.0",
     "bluebird": "^3.4.7",
     "request": "^2.79.0",
-    "request-promise": "^4.1.1",
-    "s3": "^4.4.0"
+    "request-promise": "^4.1.1"
   }
 }
