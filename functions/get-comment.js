@@ -3,17 +3,17 @@
 const request   = require('request-promise')
 const Promise   = require('bluebird')
 const uuidV4    = require('uuid/v4')
-const s3client  = require('./s3client')
+const s3client  = require('../util/s3client')
 const co        = Promise.coroutine
 const fs        = Promise.promisifyAll(require('fs'))
 
 module.exports = {
 
   /**
-   * Fetches JSON data from an external API, stores it, and sends it to
-   * the client. AWS Event Handler - not invoked explicitly.
+   * getComment Handler Function - Fetches JSON data from an external API,
+   * stores it, and sends it to the client.
    */
-  getComment: co(function*(event, context, callback) {
+  handler: co(function*(event, context, callback) {
 
     let id = event.pathParameters['id']
 
@@ -22,7 +22,7 @@ module.exports = {
 
       let data = yield request(`https://jsonplaceholder.typicode.com/comments/${id}`)
       yield saveAsync(data, fileProperties.filePath)
-      yield s3client.uploadFileFromPath(fileProperties.filePath, fileProperties.fileName)
+      yield s3client.uploadCommentFromFile(fileProperties.filePath, fileProperties.fileName)
 
       console.log('Saved and uploaded file successfully')
 
@@ -37,7 +37,10 @@ module.exports = {
       callback(err)
     }
   })
+
 }
+
+/* Helper functions (private) */
 
 /**
  * Saves the given data to the filesystem

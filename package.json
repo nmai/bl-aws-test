@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/nmai/bl-aws-test.git"
   },
-  "author": "",
+  "author": "Nick Mai",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/nmai/bl-aws-test/issues"

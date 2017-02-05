@@ -7,31 +7,38 @@ provider:
     - Effect: "Allow"
       Action:
         - "s3:*"
-      Resource: "arn:aws:s3:::bl-inbox-bucket/*"
+      Resource: "arn:aws:s3:::bltest-bucket/*"
 
 functions:
-  getComment: # Function name
-    handler: handler.getComment # Reference to file handler.js & exported function 'createUser'
-    events: # All events associated with this function
+  getComment:
+    handler: functions/get-comment.handler
+    events:
       - http:
           path: comments/{id}
           method: get
+  commentParser:
+    handler: functions/comment-parser.handler
 
 resources:
   Resources:
-    UploadBucket:
+    UploadBucket123:
+      DependsOn:
+        - CommentParserLambdaPermissionBltestBucketS3
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: bl-inbox-bucket
-        AccessControl: PublicRead
-        CorsConfiguration:
-          CorsRules:
-          - AllowedMethods:
-            - GET
-            - PUT
-            - POST
-            - HEAD
-            AllowedOrigins:
-            - "*"
-            AllowedHeaders:
-            - "*"
+        BucketName: bltest-bucket
+        NotificationConfiguration:
+          LambdaConfigurations:
+            - Event: "s3:ObjectCreated:*"
+              Function:
+                "Fn::GetAtt": [ CommentParserLambdaFunction, Arn ]
+    CommentParserLambdaPermissionBltestBucketS3: # jeez what a mess
+      DependsOn:
+        - CommentParserLambdaFunction
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          "Fn::GetAtt": [ CommentParserLambdaFunction, Arn ]
+        Action: "lambda:InvokeFunction"
+        Principal: "s3.amazonaws.com"
+        SourceArn: "arn:aws:s3:::bltest-bucket"
